@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Fauna</title>
+<meta name="description" content="Agent Fauna：Agent ID 专属的链上生物。免费领蛋、卖完孵化、持有挖 FAUNA、合成升星、喂养升级、掠食者。">
+<style>
+:root {
+  --bg: #0f1216; --panel: #171b21; --panel2: #1e232b; --line: #2a313b; --text: #e8ecf1; --dim: #8d97a5;
+  --accent: #5fd38d; --accent2: #2f8f58; --gold: #ffd24a; --red: #ff6b6b; --blue: #6aa8ff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+header { position: sticky; top: 0; z-index: 10; background: rgba(15,18,22,.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); }
+header .wrap { display: flex; align-items: center; gap: 12px; height: 58px; }
+.logo { font-weight: 800; font-size: 19px; letter-spacing: .5px; white-space: nowrap; }
+.logo span { color: var(--accent); }
+.grow { flex: 1; }
+.who { font-size: 13px; color: var(--dim); text-align: right; line-height: 1.35; overflow: hidden; }
+.who b { color: var(--text); }
+button { font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 8px; padding: 7px 14px; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.main { background: var(--accent2); border-color: var(--accent2); color: #fff; font-weight: 600; }
+button.main:hover:not(:disabled) { background: #36a565; }
+button.small { padding: 3px 10px; font-size: 13px; }
+nav { display: flex; gap: 4px; overflow-x: auto; padding: 10px 0 0; }
+nav button { border: none; background: none; color: var(--dim); padding: 8px 14px; border-radius: 8px 8px 0 0; white-space: nowrap; }
+nav button.on { color: var(--text); background: var(--panel); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0 4px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.stat .k { font-size: 12px; color: var(--dim); }
+.stat .v { font-size: 17px; font-weight: 700; margin-top: 2px; word-break: break-all; }
+.stat .s { font-size: 12px; color: var(--dim); }
+section { display: none; background: var(--panel); border: 1px solid var(--line); border-radius: 0 10px 10px 10px; padding: 18px; margin-bottom: 40px; }
+section.on { display: block; }
+h2 { font-size: 18px; margin: 0 0 12px; }
+h3 { font-size: 16px; margin: 22px 0 8px; }
+.dim { color: var(--dim); }
+.gold { color: var(--gold); }
+.red { color: var(--red); }
+.ok { color: var(--accent); }
+.note { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+.note.warn { border-color: #6b5a1d; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { border-bottom: 1px solid var(--line); padding: 7px 8px; text-align: left; vertical-align: top; }
+th { color: var(--dim); font-weight: 500; font-size: 13px; }
+.tablewrap { overflow-x: auto; }
+ol.steps { padding-left: 22px; margin: 6px 0; }
+ol.steps li { margin: 6px 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.card .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card .nm { font-weight: 700; font-size: 16px; }
+.badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); white-space: nowrap; }
+.badge.mint { border-color: var(--accent2); color: var(--accent); }
+.badge.wait { border-color: #6b5a1d; color: var(--gold); }
+.badge.mine { border-color: #2c4f7a; color: var(--blue); }
+.bar { height: 8px; background: #0c0f13; border-radius: 99px; overflow: hidden; margin: 8px 0 4px; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13px; margin: 8px 0; }
+.kv span:nth-child(odd) { color: var(--dim); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+input[type=number] { width: 70px; font: inherit; background: #0c0f13; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+.group { margin: 18px 0 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.group .nm { font-weight: 700; font-size: 16px; }
+.nfts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.nft { background: var(--panel2); border: 2px solid var(--line); border-radius: 12px; padding: 6px; cursor: pointer; position: relative; user-select: none; }
+.nft.sel { border-color: var(--gold); }
+.nft img, .nft .ph { width: 100%; aspect-ratio: 1; border-radius: 8px; display: block; background: #0c0f13; }
+.nft .t { font-size: 13px; margin-top: 4px; display: flex; justify-content: space-between; gap: 4px; }
+.nft .p { font-size: 12px; color: var(--dim); }
+.nft .chk { position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; border-radius: 6px; background: rgba(0,0,0,.6); border: 1px solid #fff6; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.nft.sel .chk { background: var(--gold); color: #000; border-color: var(--gold); }
+.actbar { position: sticky; bottom: 0; background: rgba(23,27,33,.97); border-top: 1px solid var(--line); margin: 16px -18px -18px; padding: 12px 18px; border-radius: 0 0 10px 10px; }
+.actbar .row { margin-top: 6px; }
+#toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); z-index: 50; display: flex; flex-direction: column; gap: 8px; }
+.msg { background: #222a33; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 14px; box-shadow: 0 6px 24px #0008; }
+.msg.err { border-color: #7a2c2c; }
+.msg.good { border-color: var(--accent2); }
+footer { color: var(--dim); font-size: 12px; text-align: center; padding: 0 0 40px; }
+@media (max-width: 640px) {
+  .who { font-size: 12px; max-width: 46vw; }
+  section { padding: 14px; border-radius: 0 0 10px 10px; }
+  .actbar { margin: 16px -14px -14px; padding: 10px 14px; }
+  .nfts { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+</style>
+<script src="config.js"></script>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="logo">Agent <span>Fauna</span></div>
+  <div class="grow"></div>
+  <div class="who" id="who"></div>
+  <button class="main" id="btnConnect">连接钱包</button>
+</div></header>
+
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+  <div id="liveNote"></div>
+  <nav id="tabs">
+    <button data-t="rules" class="on">玩法</button>
+    <button data-t="species">物种</button>
+    <button data-t="mine">我的</button>
+    <button data-t="pred">掠食者</button>
+    <button data-t="board">周榜</button>
+  </nav>
+
+  <section id="t-rules" class="on">
+    <h2>Agent ID 专属的链上生物</h2>
+    <p>持有 Agent ID 的钱包才能领蛋。蛋在整个物种卖完（或到期）后一起孵化，孵出来的生物放在钱包里就会一直挖 FAUNA 代币。
+      三只合一升星、喂 FAUNA 升级、两个物种杂交、凑图腾、争周榜，最强的掠食者只能用 FAUNA 换。图片和数据全在 BSC 链上。</p>
+
+    <h3>怎么玩</h3>
+    <ol class="steps">
+      <li><b>领蛋</b>：每个物种限量，前一部分免费（每个钱包有免费名额），免费领完后每只要付一点 BNB。只有持有 Agent ID 的普通钱包能领。具体数量、价格、截止时间看“物种”页。</li>
+      <li><b>孵化</b>：物种卖完或到期后，过 2 个区块用区块哈希随机孵化：<b>1 星 87%、2 星 11%、3 星 2%</b>。孵化会自动完成，任何人也都可以点。</li>
+      <li><b>挖矿</b>：孵化后持有就挖 FAUNA。每个物种每天有固定产量（<span data-fill="daily">5 万</span>枚），按权重分给这个物种的所有生物；产量<b>每周减半</b>，最多 40 周。随时可以领取，转手或卖掉时会自动先给原主人结算。</li>
+      <li><b>升星</b>：同一物种、同星级的 3 只合成 1 只高一星的（最高 5 星），等级取三只里最高的。手续费 <span data-fill="mergeFee">0.0001</span> BNB。</li>
+      <li><b>升级</b>：喂 FAUNA，每升一级权重 +10%，最高 10 级。普通生物第 n 级要 <span data-fill="feedBase">50</span>×2ⁿ 枚，掠食者第 n 级要 <span data-fill="predFeedBase">50,000</span>×2ⁿ 枚。喂的币全部销毁。</li>
+      <li><b>杂交</b>：两个不同物种各 1 只 → 1 只杂交种，权重是两只之和 ×1.25，同时挖两个物种的产量。手续费 <span data-fill="hybridFee">0.0002</span> BNB，另外销毁 <span data-fill="hybridCost">1,000</span> FAUNA。</li>
+      <li><b>图腾</b>：每周指定 4 个物种，各交 1 只 → 1 个图腾，权重是四只之和 ×2，同时挖 4 个物种。手续费 <span data-fill="totemFee">0.0005</span> BNB。本周配方看“周榜”页。</li>
+      <li><b>掠食者</b>：蛋里开不出来，只能用 FAUNA 换：第 1 只 <span data-fill="predPrice0">500,000</span> 枚，每卖出 1 只涨 2%，<b>一共只卖 10 只</b>（另有 1 只创世掠食者）。换掠食者付的 FAUNA 全部销毁。所有普通生物每次领取都要被抽 15% 给掠食者，按掠食者的权重分。掠食者也能喂养升级、三只合一升星。</li>
+      <li><b>周榜</b>：每周合成（升星、杂交、图腾）次数最多的钱包，拿走本周奖池里的 BNB。</li>
+      <li><b>Agent ID 加成</b>：领取 FAUNA 时，钱包里有 Agent ID 的多拿 20%。</li>
+    </ol>
+
+    <h3>星级和权重</h3>
+    <p class="dim">权重 = 4^(星级−1) × (10 + 等级)。一个物种的每日产量按权重比例分，权重越高分得越多。</p>
+    <div class="tablewrap"><table>
+      <tr><th>星级</th><th>0 级权重</th><th>10 级权重</th><th>怎么得到</th></tr>
+      <tr><td>★</td><td>10</td><td>20</td><td>孵化 87%</td></tr>
+      <tr><td>★★</td><td>40</td><td>80</td><td>孵化 11%，或 3 只 1 星合成</td></tr>
+      <tr><td>★★★</td><td>160</td><td>320</td><td>孵化 2%，或 3 只 2 星合成</td></tr>
+      <tr><td>★★★★</td><td>640</td><td>1,280</td><td>3 只 3 星合成</td></tr>
+      <tr><td>★★★★★</td><td>2,560</td><td>5,120</td><td>3 只 4 星合成</td></tr>
+    </table></div>
+    <p class="dim">3 只合 1 后权重变成 4 倍（比原来三只加起来多三分之一），所以合成越多越划算。</p>
+
+    <h3>钱去哪里</h3>
+    <div class="tablewrap"><table>
+      <tr><th>付费领蛋的 BNB</th><th>去向</th></tr>
+      <tr><td>50%</td><td>孵化时自动加进 FAUNA/BNB 池子，LP 打进黑洞地址，谁也取不出来</td></tr>
+      <tr><td>10%</td><td>“最后一击”奖：给领到这个物种最后一只的钱包</td></tr>
+      <tr><td>5%</td><td>本周周榜奖池</td></tr>
+      <tr><td>35%</td><td>项目方</td></tr>
+    </table></div>
+    <p class="dim">合成、杂交、图腾的手续费归项目方。杂交、喂养、换掠食者花的 FAUNA 全部销毁。</p>
+
+    <h3>安全说明</h3>
+    <ul>
+      <li>合约里没有任何能提走玩家 NFT、FAUNA 或池子的函数。</li>
+      <li>FAUNA 总量上限 20 亿枚，只有挖矿奖励和自动加池能增发，没有交易税。</li>
+      <li>项目方能做的只有：发新物种、每周设图腾配方、在写死的上限内调手续费和喂养价格、换图片合约（只影响画风）。</li>
+      <li>NFT 转手版税 5%（交易市场支持时）。</li>
+    </ul>
+    <div id="contracts" class="dim" style="font-size:13px"></div>
+  </section>
+
+  <section id="t-species">
+    <h2>物种</h2>
+    <div id="spList"><p class="dim">读取中…</p></div>
+  </section>
+
+  <section id="t-mine">
+    <h2>我的生物</h2>
+    <div id="mineBody"><p class="dim">连接钱包后显示。</p></div>
+    <div class="actbar" id="actbar" style="display:none">
+      <div id="selInfo" class="dim">点卡片选中生物，再选下面的操作。</div>
+      <div class="row">
+        <button id="aMerge" disabled>三合一升星</button>
+        <button id="aFeed" disabled>喂养升级</button>
+        <button id="aHybrid" disabled>杂交</button>
+        <button id="aTotem" disabled>做图腾</button>
+        <button id="aClear" class="small">清除选择</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="t-pred">
+    <h2>掠食者</h2>
+    <div id="predBody"><p class="dim">读取中…</p></div>
+  </section>
+
+  <section id="t-board">
+    <h2>周榜和图腾配方</h2>
+    <div id="boardBody"><p class="dim">读取中…</p></div>
+  </section>
+</div>
+<footer>Agent Fauna · BSC 链上运行 · 玩之前请自己判断风险，链上操作不可撤回</footer>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const CFG = window.FAUNA_CFG, A = CFG.addr, S = CFG.sel;
+const E18 = 10n ** 18n, WEEK = 604800;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+
+// ---------------- 编码 / 解码 ----------------
+const hx = v => BigInt(v).toString(16).padStart(64, "0");
+const ha = a => a.toLowerCase().replace(/^0x/, "").padStart(64, "0");
+function splitTypes(sig) {
+  const inner = sig.slice(sig.indexOf("(") + 1, -1);
+  const out = []; let depth = 0, cur = "";
+  for (const ch of inner) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (ch === "," && depth === 0) { out.push(cur); cur = ""; } else cur += ch;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+function word(t, v) { return t === "address" ? ha(v) : t === "bool" ? hx(v ? 1 : 0) : hx(v); }
+/** 只支持网页用到的类型：uint/address/bool、定长数组、uint256[] 动态数组 */
+function cd(sig, ...args) {
+  if (!S[sig]) throw new Error("缺少选择器 " + sig);
+  const types = splitTypes(sig);
+  let head = [], tail = "";
+  const headLen = types.reduce((n, t) => n + (/\[\d+\]$/.test(t) ? +t.match(/\[(\d+)\]$/)[1] : 1), 0) * 32;
+  types.forEach((t, i) => {
+    const v = args[i];
+    if (/\[\]$/.test(t)) {
+      head.push(hx(headLen + tail.length / 2));
+      tail += hx(v.length) + v.map(x => word(t.slice(0, -2), x)).join("");
+    } else if (/\[\d+\]$/.test(t)) {
+      v.forEach(x => head.push(word(t.replace(/\[\d+\]$/, ""), x)));
+    } else head.push(word(t, v));
+  });
+  return S[sig] + head.join("") + tail;
+}
+const W = (h, i) => h.slice(2 + i * 64, 2 + i * 64 + 64);
+const U = (h, i = 0) => (h && h.length >= 66 + i * 64) ? BigInt("0x" + W(h, i)) : 0n;
+const N = (h, i = 0) => Number(U(h, i));
+const AD = (h, i = 0) => "0x" + W(h, i).slice(24);
+const B = (h, i = 0) => U(h, i) !== 0n;
+function STR(h, i = 0) {
+  if (!h || h.length < 130) return "";
+  const off = Number(U(h, i)) * 2 + 2;
+  const len = Number(BigInt("0x" + h.slice(off, off + 64)));
+  const bytes = h.slice(off + 64, off + 64 + len * 2);
+  const arr = new Uint8Array(bytes.match(/../g)?.map(x => parseInt(x, 16)) || []);
+  return new TextDecoder().decode(arr);
+}
+
+// ---------------- 读链 ----------------
+let rpcIdx = 0;
+async function rpc(method, params) {
+  let last;
+  for (let k = 0; k < CFG.rpcs.length * 2; k++) {
+    const url = CFG.rpcs[rpcIdx % CFG.rpcs.length];
+    try {
+      const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params})});
+      const j = await r.json();
+      if (j.error) { const e = new Error(j.error.message || "节点报错"); e.data = j.error.data; e.isRevert = true; throw e; }
+      return j.result;
+    } catch (e) {
+      if (e.isRevert) throw e;
+      last = e; rpcIdx++;
+    }
+  }
+  throw new Error("连不上 BSC 节点，请稍后刷新" + (last ? "（" + last.message + "）" : ""));
+}
+const ethCall = (to, data, from, value) => rpc("eth_call", [Object.assign({to, data}, from ? {from} : {}, value ? {value: "0x" + BigInt(value).toString(16)} : {}), "latest"]);
+
+function encAgg(calls) {
+  let offs = "", tails = "", pos = calls.length * 32;
+  for (const [to, data] of calls) {
+    const d = data.replace(/^0x/, ""), len = d.length / 2;
+    const t = ha(to) + hx(1) + hx(96) + hx(len) + d.padEnd(Math.ceil(len / 32) * 64, "0");
+    offs += hx(pos); tails += t; pos += t.length / 2;
+  }
+  return S["aggregate3((address,bool,bytes)[])"] + hx(32) + hx(calls.length) + offs + tails;
+}
+function decAgg(r) {
+  const h = r.slice(2), at = b => BigInt("0x" + h.slice(b * 2, b * 2 + 64));
+  const base = Number(at(0)), n = Number(at(base)), out = [];
+  for (let i = 0; i < n; i++) {
+    const off = base + 32 + Number(at(base + 32 + i * 32));
+    const ok = at(off) === 1n, doff = off + Number(at(off + 32)), len = Number(at(doff));
+    out.push(ok ? "0x" + h.slice((doff + 32) * 2, (doff + 32 + len) * 2) : null);
+  }
+  return out;
+}
+/** 批量读：[[合约, calldata], ...] → 每个调用的返回（失败为 null） */
+async function multi(calls, chunk = 250) {
+  const out = [];
+  for (let i = 0; i < calls.length; i += chunk) {
+    const part = calls.slice(i, i + chunk);
+    out.push(...decAgg(await ethCall(A.multicall, encAgg(part))));
+  }
+  return out;
+}
+
+// ---------------- 格式 ----------------
+function fmt(v, dec = 18, digits = 2) {
+  v = BigInt(v);
+  const neg = v < 0n; if (neg) v = -v;
+  const base = 10n ** BigInt(dec), whole = v / base;
+  let frac = (v % base).toString().padStart(dec, "0").slice(0, digits).replace(/0+$/, "");
+  return (neg ? "-" : "") + whole.toLocaleString("en-US") + (frac ? "." + frac : "");
+}
+const bnb = v => fmt(v, 18, 6);
+const fauna = v => fmt(v, 18, v < 100n * E18 ? 2 : 0);
+const toF = v => Number(BigInt(v) * 1000000n / E18) / 1e6;
+function num(x, d = 2) {
+  if (x >= 1e8) return +(x / 1e8).toFixed(2) + " 亿";
+  if (x >= 1e5) return +(x / 1e4).toFixed(1) + " 万";
+  return x.toLocaleString("en-US", {maximumFractionDigits: d});
+}
+function usd(x) { return x >= 1 ? "$" + x.toLocaleString("en-US", {maximumFractionDigits: 2}) : "$" + x.toPrecision(3); }
+const short = a => a ? a.slice(0, 6) + "…" + a.slice(-4) : "";
+const scan = (a, kind = "address") => `<a href="${CFG.explorer}/${kind}/${a}" target="_blank" rel="noopener">${short(a)}</a>`;
+function left(sec) {
+  if (sec <= 0) return "已到期";
+  const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+  return d ? `${d} 天 ${h} 小时` : h ? `${h} 小时 ${m} 分` : `${m} 分`;
+}
+const stars = n => "★".repeat(n);
+const weight = (star, level) => (1 << (2 * (star - 1))) * (10 + level);
+
+function toast(html, kind = "", ms = 7000) {
+  const d = document.createElement("div");
+  d.className = "msg " + kind; d.innerHTML = html;
+  $("toast").appendChild(d);
+  if (ms) setTimeout(() => d.remove(), ms);
+  return d;
+}
+function errText(e) {
+  if (e && (e.code === 4001 || /user rejected|denied|cancel/i.test(e.message || ""))) return "你在钱包里取消了";
+  const blob = JSON.stringify(e && e.data !== undefined ? e.data : "") + " " + (e && e.message || "");
+  const m = blob.match(/0x[0-9a-fA-F]{8,}/);
+  if (m) {
+    const d = m[0].toLowerCase(), s4 = d.slice(0, 10);
+    if (CFG.err[s4]) return CFG.err[s4];
+    if (s4 === "0x08c379a0") {
+      const r = STR("0x" + d.slice(10));
+      return r === "balance" ? "FAUNA 余额不够" : r === "allowance" ? "授权额度不够" : "合约拒绝：" + r;
+    }
+  }
+  return (e && e.message) || String(e);
+}
+
+// ---------------- 状态 ----------------
+const G = {live: false, n: 0, sp: {}, lab: {}, me: null, mine: null, sel: [], now: 0, nowAt: 0, block: 0, tab: "rules", loading: false};
+const chainNow = () => G.now + Math.floor((Date.now() - G.nowAt) / 1000);
+
+async function loadWorld() {
+  const code = await rpc("eth_getCode", [A.world, "latest"]);
+  G.live = code && code !== "0x";
+  const blk = await rpc("eth_getBlockByNumber", ["latest", false]);
+  G.block = parseInt(blk.number, 16); G.now = parseInt(blk.timestamp, 16); G.nowAt = Date.now();
+  if (!G.live) return;
+  const L = A.lab;
+  const base = [
+    [A.world, cd("speciesCount()")], [A.world, cd("predTotalWeight()")],
+    [L, cd("week()")], [L, cd("predSid()")], [L, cd("predSold()")], [L, cd("predPrice()")], [L, cd("PRED_CAP()")],
+    [L, cd("mergeFee()")], [L, cd("hybridFee()")], [L, cd("totemFee()")], [L, cd("hybridCost()")], [L, cd("feedBase()")],
+    [L, cd("predFeedBase()")], [L, cd("recipeWeek()")], [A.token, cd("totalSupply()")],
+    [A.factory, cd("getPair(address,address)", A.token, A.wbnb)], [A.factory, cd("getPair(address,address)", A.wbnb, A.usdt)],
+    [L, cd("recipe(uint256)", 0)], [L, cd("recipe(uint256)", 1)], [L, cd("recipe(uint256)", 2)], [L, cd("recipe(uint256)", 3)],
+  ];
+  const r = await multi(base);
+  const lab = {
+    week: N(r[2]), predSid: N(r[3]), predSold: N(r[4]), predPrice: U(r[5]), predCap: N(r[6]), mergeFee: U(r[7]),
+    hybridFee: U(r[8]), totemFee: U(r[9]), hybridCost: U(r[10]), feedBase: U(r[11]), predFeedBase: U(r[12]),
+    recipeWeek: U(r[13]), supply: U(r[14]), pair: AD(r[15]), usdPair: AD(r[16]), predTotalWeight: U(r[1]),
+    recipe: [N(r[17]), N(r[18]), N(r[19]), N(r[20])],
+  };
+  lab.recipeOn = lab.recipeWeek === BigInt(lab.week);
+  G.n = N(r[0]);
+  // 价格：FAUNA/BNB 池子、BNB/USDT 池子
+  const pc = [];
+  const zero = "0x0000000000000000000000000000000000000000";
+  if (lab.pair !== zero) pc.push([lab.pair, cd("getReserves()")], [lab.pair, cd("token0()")]);
+  if (lab.usdPair !== zero) pc.push([lab.usdPair, cd("getReserves()")], [lab.usdPair, cd("token0()")]);
+  const weeks = [];
+  for (let w = Math.max(0, lab.week - 4); w <= lab.week; w++) weeks.push(w);
+  for (const w of weeks) pc.push([L, cd("weekPool(uint256)", w)], [L, cd("weekPaid(uint256)", w)], [L, cd("topOf(uint256)", w)], [L, cd("topCount(uint256)", w)]);
+  const pr = await multi(pc);
+  let k = 0;
+  lab.price = 0; lab.poolBNB = 0n; lab.bnbUsd = 0;
+  if (lab.pair !== zero) {
+    const r0 = U(pr[k], 0), r1 = U(pr[k], 1), t0 = AD(pr[k + 1]).toLowerCase(); k += 2;
+    const [rt, rb] = t0 === A.token.toLowerCase() ? [r0, r1] : [r1, r0];
+    lab.poolBNB = rb; lab.price = rt > 0n ? Number(rb * 10n ** 18n / rt) / 1e18 : 0;
+  }
+  if (lab.usdPair !== zero) {
+    const r0 = U(pr[k], 0), r1 = U(pr[k], 1), t0 = AD(pr[k + 1]).toLowerCase(); k += 2;
+    const [ru, rw] = t0 === A.usdt.toLowerCase() ? [r0, r1] : [r1, r0];
+    lab.bnbUsd = rw > 0n ? Number(ru * 1000n / rw) / 1000 : 0;
+  }
+  lab.weeks = weeks.map(w => { const o = {w, pool: U(pr[k]), paid: B(pr[k + 1]), top: AD(pr[k + 2]), count: N(pr[k + 3])}; k += 4; return o; });
+  G.lab = lab;
+  // 物种
+  const F = ["name()", "symbol()", "MAX_SUPPLY()", "FREE_SUPPLY()", "FREE_PER_WALLET()", "MAX_PER_WALLET()", "PRICE()",
+             "deadline()", "totalMinted()", "freeClaimed()", "nextId()", "mintOpen()", "lastMinter()"];
+  const info = await multi(Array.from({length: G.n}, (_, i) => [A.world, cd("speciesInfo(uint256)", i + 1)]));
+  const sp = {};
+  info.forEach((h, i) => {
+    const sid = i + 1;
+    sp[sid] = {sid, addr: AD(h, 0), state: N(h, 1), minted: N(h, 2), revealBlock: N(h, 3), lpBNB: U(h, 4), lastBNB: U(h, 5),
+               totalWeight: U(h, 6), start: N(h, 7), rate0: U(h, 8)};
+  });
+  const fr = await multi(Object.values(sp).flatMap(s => F.map(f => [s.addr, cd(f)])));
+  Object.values(sp).forEach((s, i) => {
+    const g = j => fr[i * F.length + j];
+    Object.assign(s, {name: STR(g(0)), symbol: STR(g(1)), max: N(g(2)), free: N(g(3)), fpw: N(g(4)), mpw: N(g(5)), price: U(g(6)),
+                      deadline: N(g(7)), totalMinted: N(g(8)), freeClaimed: N(g(9)), nextId: N(g(10)), open: B(g(11)), lastMinter: AD(g(12))});
+    s.pred = s.sid === lab.predSid;
+    s.wk = s.start ? Math.floor((chainNow() - s.start) / WEEK) : 0;
+    s.daily = s.start && s.wk < 40 ? (s.rate0 >> BigInt(s.wk)) * 86400n : 0n;
+  });
+  G.sp = sp;
+}
+
+async function loadMe() {
+  if (!G.me || !G.live) { G.mine = null; return; }
+  const me = G.me, L = A.lab, sps = Object.values(G.sp);
+  const r = await multi([
+    [A.agent, cd("balanceOf(address)", me)], [A.agent, cd("handleOf(address)", me)], [A.token, cd("balanceOf(address)", me)],
+    [A.multicall, cd("getEthBalance(address)", me)], [L, cd("crafted(uint256,address)", G.lab.week, me)],
+    [A.composite, cd("balanceOf(address)", me)], [A.composite, cd("totalSupply()")],
+    ...sps.flatMap(s => [[s.addr, cd("balanceOf(address)", me)], [s.addr, cd("freeLeft(address)", me)], [s.addr, cd("mintedBy(address)", me)]]),
+  ]);
+  const M = {agent: U(r[0]) > 0n, handle: STR(r[1]), fauna: U(r[2]), bnb: U(r[3]), crafted: N(r[4]), compBal: N(r[5]), compTotal: N(r[6]),
+             bal: {}, freeLeft: {}, mintedBy: {}, items: [], comps: []};
+  sps.forEach((s, i) => { M.bal[s.sid] = N(r[7 + i * 3]); M.freeLeft[s.sid] = N(r[8 + i * 3]); M.mintedBy[s.sid] = N(r[9 + i * 3]); });
+  // 找出自己的编号：只扫有余额的物种（1..已 mint 数 和 合成出来的 MAX+1..nextId）
+  const scanCalls = [], scanIds = [];
+  for (const s of sps) {
+    if (!M.bal[s.sid]) continue;
+    const ids = [];
+    for (let id = 1; id <= s.totalMinted; id++) ids.push(id);
+    for (let id = s.max + 1; id <= s.nextId; id++) ids.push(id);
+    ids.forEach(id => { scanCalls.push([s.addr, cd("ownerOf(uint256)", id)]); scanIds.push([s.sid, id]); });
+  }
+  if (M.compBal) for (let id = 1; id <= M.compTotal; id++) { scanCalls.push([A.composite, cd("ownerOf(uint256)", id)]); scanIds.push([0, id]); }
+  const own = await multi(scanCalls, 400);
+  const mineIds = scanIds.filter((_, i) => own[i] && AD(own[i]).toLowerCase() === me);
+  // 特征、待领
+  const dc = [];
+  for (const [sid, id] of mineIds) {
+    if (sid === 0) dc.push([A.world, cd("compInfo(uint256)", id)], [A.world, cd("pendingComposite(uint256[])", [id])]);
+    else if (G.sp[sid].state === 2) dc.push([A.world, cd("traitsOf(uint256,uint256)", sid, id)], [A.world, cd("pending(uint256,uint256[])", sid, [id])]);
+    else dc.push([A.world, cd("speciesCount()")], [A.world, cd("speciesCount()")]);   // 蛋：占位
+  }
+  const dr = await multi(dc);
+  mineIds.forEach(([sid, id], i) => {
+    const a = dr[i * 2], p = dr[i * 2 + 1];
+    if (sid === 0) {
+      const n = N(a, 1), parents = [], ws = [];
+      for (let k = 0; k < n; k++) { parents.push(AD(a, 2 + k).toLowerCase()); ws.push(U(a, 6 + k)); }
+      M.comps.push({id, kind: N(a, 0), n, parents, ws, pending: U(p)});
+    } else if (G.sp[sid].state === 2) {
+      M.items.push({sid, id, egg: false, star: N(a, 0), level: N(a, 1), pred: B(a, 2), pending: U(p, 0) + U(p, 1)});
+    } else M.items.push({sid, id, egg: true});
+  });
+  G.mine = M;
+  G.sel = G.sel.filter(k => M.items.some(t => key(t) === k));
+}
+const key = t => t.sid + ":" + t.id;
+const imgKey = t => key(t) + (t.egg ? ":egg" : `:${t.star}:${t.level}:${t.pred ? 1 : 0}`);   // 孵化、升级后图片会变
+
+// 图片：tokenURI 是链上现画的 SVG，按需读、缓存
+const IMG = {};
+async function loadImages(list) {
+  const need = list.filter(x => !IMG[x.k]);
+  const calls = need.map(x => [x.addr, cd("tokenURI(uint256)", x.id)]);
+  for (let i = 0; i < calls.length; i += 6) {
+    const r = await multi(calls.slice(i, i + 6), 6);
+    r.forEach((h, j) => {
+      const x = need[i + j];
+      try {
+        const uri = STR(h);
+        const json = JSON.parse(atob(uri.split(",")[1]));
+        IMG[x.k] = json.image;
+        const el = document.querySelector(`[data-img="${x.k}"]`);
+        if (el) el.outerHTML = `<img src="${json.image}" alt="" data-img="${x.k}">`;
+      } catch (e) { /* 读不到就留占位 */ }
+    });
+  }
+}
+
+// ---------------- 钱包和发交易 ----------------
+const eth = () => window.ethereum;
+async function ensureChain() {
+  const id = parseInt(await eth().request({method: "eth_chainId"}), 16);
+  if (id === CFG.chainId) return;
+  const hexId = "0x" + CFG.chainId.toString(16);
+  try {
+    await eth().request({method: "wallet_switchEthereumChain", params: [{chainId: hexId}]});
+  } catch (e) {
+    if (e.code !== 4902) throw e;
+    await eth().request({method: "wallet_addEthereumChain", params: [{chainId: hexId, chainName: "BNB Smart Chain",
+      nativeCurrency: {name: "BNB", symbol: "BNB", decimals: 18}, rpcUrls: [CFG.rpcs[0]], blockExplorerUrls: [CFG.explorer]}]});
+  }
+}
+async function connect() {
+  if (!eth()) {
+    toast("没检测到钱包。请在币安钱包、MetaMask、OKX、TokenPocket 等钱包 App 的内置浏览器里打开本页，或在电脑浏览器装钱包插件。", "err", 12000);
+    return false;
+  }
+  try {
+    const accs = await eth().request({method: "eth_requestAccounts"});
+    G.me = accs[0].toLowerCase();
+    await ensureChain();
+  } catch (e) { toast("连接钱包失败：" + esc(errText(e)), "err"); return false; }
+  if (!G.hooked && eth().on) {
+    G.hooked = true;
+    eth().on("accountsChanged", a => { G.me = a[0] ? a[0].toLowerCase() : null; G.sel = []; refresh(); });
+    eth().on("chainChanged", () => refresh());
+  }
+  await refresh();
+  return true;
+}
+async function waitReceipt(hash) {
+  for (let i = 0; i < 120; i++) {
+    const rc = await rpc("eth_getTransactionReceipt", [hash]).catch(() => null);
+    if (rc) return rc;
+    await new Promise(r => setTimeout(r, 2500));
+  }
+  throw new Error("等了 5 分钟还没确认，请到区块浏览器看交易 " + hash);
+}
+let sending = false;
+async function send(to, data, value, what) {
+  if (sending) { toast("上一笔还没完成，请稍等", "err"); return null; }
+  if (!G.me && !(await connect())) return null;
+  sending = true;
+  let note;
+  try {
+    await ensureChain();
+    try { await ethCall(to, data, G.me, value); }
+    catch (e) { throw new Error(errText(e)); }
+    const tx = {from: G.me, to, data};
+    if (value) tx.value = "0x" + BigInt(value).toString(16);
+    const hash = await eth().request({method: "eth_sendTransaction", params: [tx]});
+    note = toast(`${esc(what)}：已发出，等待确认… <a href="${CFG.explorer}/tx/${hash}" target="_blank" rel="noopener">查看</a>`, "", 0);
+    const rc = await waitReceipt(hash);
+    note.remove();
+    if (rc.status !== "0x1") throw new Error("交易上链了但失败了");
+    toast(`${esc(what)}：成功 ✓`, "good");
+    await refresh();
+    return rc;
+  } catch (e) {
+    if (note) note.remove();
+    toast(`${esc(what)}没成功：${esc(errText(e))}`, "err", 10000);
+    return null;
+  } finally { sending = false; }
+}
+
+// ---------------- 渲染 ----------------
+function fillRules() {
+  const L = G.lab;
+  if (!G.live || !L.week && L.week !== 0) return;
+  const set = (k, v) => document.querySelectorAll(`[data-fill="${k}"]`).forEach(e => e.textContent = v);
+  const anySp = Object.values(G.sp).find(s => !s.pred && s.rate0 > 0n);
+  if (anySp) set("daily", num(toF(anySp.rate0 * 86400n), 0));
+  set("mergeFee", bnb(L.mergeFee)); set("hybridFee", bnb(L.hybridFee)); set("totemFee", bnb(L.totemFee));
+  set("hybridCost", fauna(L.hybridCost)); set("feedBase", fauna(L.feedBase)); set("predFeedBase", fauna(L.predFeedBase));
+}
+function renderStats() {
+  const L = G.lab, M = G.mine;
+  const box = (k, v, s = "") => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  if (!G.live) {
+    $("stats").innerHTML = box("状态", "即将上线", "合约部署后这里显示实时数据");
+    $("liveNote").innerHTML = `<div class="note warn">合约还没上线。可以先看看玩法，上线后刷新本页就能领蛋。</div>`;
+    return;
+  }
+  $("liveNote").innerHTML = "";
+  const sps = Object.values(G.sp).filter(s => !s.pred);
+  const minting = sps.filter(s => s.state === 0 && s.open && chainNow() <= s.deadline).length, mining = sps.filter(s => s.state === 2).length;
+  const usdP = L.price * L.bnbUsd;
+  const swap = `https://pancakeswap.finance/swap?chain=bsc&outputCurrency=${A.token}`;
+  $("stats").innerHTML =
+    box("FAUNA 价格", L.price ? (usdP ? usd(usdP) : L.price.toPrecision(3) + " BNB") : "还没有池子",
+        L.price ? `<a href="${swap}" target="_blank" rel="noopener">去 PancakeSwap 买卖</a>` : "第一个物种孵化时自动建池") +
+    box("FAUNA 流通量", num(toF(L.supply), 0), L.price && usdP ? "市值约 " + usd(toF(L.supply) * usdP) : "") +
+    box("物种", sps.length, `${minting} 个领蛋中 · ${mining} 个挖矿中`) +
+    box("掠食者", `${L.predSold}/${L.predCap}`, L.predSold < L.predCap ? "下一只 " + fauna(L.predPrice) + " FAUNA" : "已售罄") +
+    box(`第 ${L.week + 1} 周奖池`, bnb(L.weeks.at(-1).pool) + " BNB", L.weeks.at(-1).count ? "领先：" + short(L.weeks.at(-1).top) + "（" + L.weeks.at(-1).count + " 次）" : "还没人合成") +
+    (M ? box("我的 FAUNA", fauna(M.fauna), bnb(M.bnb) + " BNB") : "");
+  $("contracts").innerHTML = "合约：" + [["FAUNA 代币", A.token], ["世界", A.world], ["工坊", A.lab], ["杂交种/图腾", A.composite]]
+    .map(([n, a]) => `${n} ${scan(a, "address")}`).join(" · ");
+}
+function renderWho() {
+  const M = G.mine;
+  if (!G.me) { $("who").innerHTML = ""; $("btnConnect").style.display = ""; return; }
+  $("btnConnect").style.display = "none";
+  $("who").innerHTML = `<b>${M && M.handle ? esc(M.handle) + ".ai" : short(G.me)}</b><br>` +
+    (M ? (M.agent ? '<span class="ok">✓ 有 Agent ID</span>' : '<span class="red">没有 Agent ID</span>') + ` · ${fauna(M.fauna)} FAUNA` : "");
+}
+const STATE = {0: ["领蛋中", "mint"], 1: ["等孵化", "wait"], 2: ["挖矿中", "mine"], 3: ["没人领，已结束", ""]};
+function renderSpecies() {
+  if (!G.live) { $("spList").innerHTML = `<p class="dim">合约上线后显示物种。</p>`; return; }
+  const M = G.mine, now = chainNow();
+  const rank = s => s.state === 0 ? (s.open && now <= s.deadline ? 0 : 2) : s.state === 1 ? 1 : s.state === 2 ? 3 : 4;
+  const sps = Object.values(G.sp).filter(s => !s.pred).sort((a, b) => rank(a) - rank(b) || b.sid - a.sid);
+  if (!sps.length) { $("spList").innerHTML = `<p class="dim">还没有物种，第一个物种发布后显示在这里。</p>`; return; }
+  $("spList").innerHTML = `<div class="cards">${sps.map(s => {
+    const [st, cls] = rank(s) === 2 ? ["已到期，等关门", "wait"] : STATE[s.state];
+    const pct = s.max ? Math.min(100, s.totalMinted * 100 / s.max) : 0;
+    const freeAll = Math.max(0, s.free - s.freeClaimed);
+    let body = `<div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="dim" style="font-size:13px">已领 ${s.totalMinted} / ${s.max}（免费还剩 ${freeAll}）</div>
+      <div class="kv"><span>免费</span><span>前 ${s.free} 只，每个钱包 ${s.fpw} 只</span>
+      <span>之后</span><span>${bnb(s.price)} BNB / 只，每个钱包最多 ${s.mpw} 只</span>`;
+    if (s.state === 0) body += `<span>截止</span><span>${left(s.deadline - now)}</span>`;
+    if (s.state === 2) body += `<span>今天产量</span><span>${num(toF(s.daily), 0)} FAUNA（第 ${s.wk + 1} 周${s.wk >= 40 ? "，已停产" : ""}）</span>
+      <span>总权重</span><span>${s.totalWeight.toLocaleString()}</span>`;
+    body += `<span>合约</span><span>${scan(s.addr)}</span></div>`;
+    let act = "";
+    if (s.state === 0 && s.open && now <= s.deadline) {
+      const mine = M ? M.mintedBy[s.sid] : 0, room = Math.max(0, Math.min(s.mpw - mine, s.max - s.totalMinted));
+      const fl = M ? M.freeLeft[s.sid] : Math.min(s.fpw, freeAll);
+      act = `<div class="row"><input type="number" min="1" max="${room || 1}" value="${Math.max(1, Math.min(room, fl || 1))}" id="q${s.sid}" data-sid="${s.sid}" class="qty">
+        <button class="main" data-mint="${s.sid}" ${M && (!M.agent || !room) ? "disabled" : ""}>领蛋</button>
+        <span class="dim" id="c${s.sid}" style="font-size:13px"></span></div>`;
+      if (M && !M.agent) act += `<div class="red" style="font-size:13px;margin-top:6px">你的钱包没有 Agent ID，不能领</div>`;
+      else if (M && !room) act += `<div class="dim" style="font-size:13px;margin-top:6px">你已经领满 ${s.mpw} 只</div>`;
+      else if (M) act += `<div class="dim" style="font-size:13px;margin-top:6px">你已领 ${mine} 只，还有 ${fl} 个免费名额</div>`;
+    } else if (s.state === 0) {
+      act = `<div class="row"><button data-close="${s.sid}">到期了，关门孵化</button><span class="dim" style="font-size:13px">谁都可以点</span></div>`;
+    } else if (s.state === 1) {
+      act = G.block >= s.revealBlock
+        ? `<div class="row"><button data-reveal="${s.sid}">帮它孵化</button><span class="dim" style="font-size:13px">谁都可以点，通常会自动完成</span></div>`
+        : `<div class="dim" style="font-size:13px;margin-top:8px">等 2 个区块后孵化…</div>`;
+    }
+    if (M && M.bal[s.sid]) act += `<div style="font-size:13px;margin-top:6px">你持有 <b>${M.bal[s.sid]}</b> 只 · <a href="#" data-goto="mine">去“我的”</a></div>`;
+    return `<div class="card"><div class="top"><span class="nm">${esc(s.name)} <span class="dim" style="font-size:13px">#${s.sid}</span></span><span class="badge ${cls}">${st}</span></div>${body}${act}</div>`;
+  }).join("")}</div>`;
+  document.querySelectorAll(".qty").forEach(el => { el.oninput = () => quote(+el.dataset.sid); quote(+el.dataset.sid); });
+}
+function quote(sid) {
+  const s = G.sp[sid], el = $("q" + sid), out = $("c" + sid);
+  if (!el || !out) return;
+  const q = Math.max(1, parseInt(el.value) || 1);
+  const fl = G.mine ? G.mine.freeLeft[sid] : 0, free = Math.min(fl, q);
+  const cost = BigInt(q - free) * s.price;
+  out.textContent = G.mine ? (cost ? `付 ${bnb(cost)} BNB` + (free ? `（含免费 ${free} 只）` : "") : "免费") : "";
+}
+
+function speciesDaily(s, w) {   // 一份权重 w 在物种 s 里每天大约分到多少（未扣抽成、未加加成）
+  if (!s || s.totalWeight === 0n) return 0;
+  return toF(s.daily) * Number(w) / Number(s.totalWeight);
+}
+function grazerDailyTotal() { return Object.values(G.sp).filter(s => !s.pred && s.state === 2).reduce((a, s) => a + toF(s.daily), 0); }
+function itemDaily(t) {
+  const s = G.sp[t.sid], M = G.mine, boost = M && M.agent ? 1.2 : 1;
+  const w = weight(t.star, t.level);
+  if (t.pred) return G.lab.predTotalWeight > 0n ? grazerDailyTotal() * 0.15 * w / Number(G.lab.predTotalWeight) * boost : 0;
+  return speciesDaily(s, w) * (G.lab.predTotalWeight > 0n ? 0.85 : 1) * boost;
+}
+function compDaily(c) {
+  const M = G.mine, boost = M && M.agent ? 1.2 : 1;
+  let d = 0;
+  c.parents.forEach((a, k) => { const s = Object.values(G.sp).find(x => x.addr.toLowerCase() === a); d += speciesDaily(s, c.ws[k]); });
+  return d * (G.lab.predTotalWeight > 0n ? 0.85 : 1) * boost;
+}
+
+function renderMine() {
+  const M = G.mine;
+  $("actbar").style.display = M && M.items.length ? "" : "none";
+  if (!G.live) { $("mineBody").innerHTML = `<p class="dim">合约上线后显示。</p>`; return; }
+  if (!G.me) { $("mineBody").innerHTML = `<p class="dim">连接钱包后显示你的生物。</p><button class="main" data-connect>连接钱包</button>`; return; }
+  if (!M) { $("mineBody").innerHTML = `<p class="dim">读取中…</p>`; return; }
+  if (!M.items.length && !M.comps.length) { $("mineBody").innerHTML = `<p class="dim">你还没有生物。去“物种”页领蛋吧。</p>`; return; }
+  const groups = {};
+  M.items.forEach(t => (groups[t.sid] = groups[t.sid] || []).push(t));
+  const imgs = [];
+  let html = `<div class="note">合计待领约 <b class="gold">${fauna(M.items.reduce((a, t) => a + (t.pending || 0n), 0n) + M.comps.reduce((a, c) => a + c.pending, 0n))}</b> FAUNA（领取时${G.lab.predTotalWeight > 0n ? "普通生物扣 15% 给掠食者，" : ""}${M.agent ? "有 Agent ID 再多 20%" : "没有 Agent ID，没有 20% 加成"}）。本周你合成了 ${M.crafted} 次。</div>`;
+  for (const sid of Object.keys(groups).sort((a, b) => b - a)) {
+    const s = G.sp[sid], list = groups[sid].sort((a, b) => (b.star || 0) - (a.star || 0) || (b.level || 0) - (a.level || 0) || a.id - b.id);
+    const pend = list.reduce((a, t) => a + (t.pending || 0n), 0n);
+    const counts = {};
+    list.filter(t => !t.egg && t.star < 5).forEach(t => { const k = t.star + (t.pred ? "p" : ""); counts[k] = (counts[k] || 0) + 1; });
+    const mergeable = Object.entries(counts).filter(([, n]) => n >= 3).map(([k]) => k);
+    html += `<div class="group"><span class="nm">${esc(s.name)}${s.pred ? ' <span class="red">掠食者</span>' : ""}</span>
+      <span class="badge ${STATE[s.state][1]}">${STATE[s.state][0]}</span><span class="dim">${list.length} 只</span>
+      ${s.state === 2 ? `<button class="small" data-claim="${sid}" ${pend ? "" : "disabled"}>领取 ${fauna(pend)} FAUNA</button>` : ""}
+      ${mergeable.map(k => `<button class="small" data-auto="${sid}:${k}">选 3 只 ${stars(parseInt(k))}${k.endsWith("p") ? "掠食者" : ""} 合成</button>`).join("")}</div>
+      <div class="nfts">${list.map(t => {
+        const k = key(t), ik = imgKey(t);
+        imgs.push({k: ik, addr: s.addr, id: t.id});
+        const img = IMG[ik] ? `<img src="${IMG[ik]}" alt="" data-img="${ik}">` : `<div class="ph" data-img="${ik}"></div>`;
+        const label = t.egg ? '<span class="dim">蛋</span>' : `<span class="gold">${stars(t.star)}</span><span>Lv ${t.level}</span>`;
+        const sub = t.egg ? "等孵化" : `待领 ${fauna(t.pending)} · 约 ${num(itemDaily(t), 1)}/天`;
+        return `<div class="nft ${G.sel.includes(k) ? "sel" : ""}" data-k="${k}">${t.egg ? "" : '<div class="chk">✓</div>'}${img}
+          <div class="t"><span>#${t.id}</span>${label}</div><div class="p">${sub}</div></div>`;
+      }).join("")}</div>`;
+  }
+  if (M.comps.length) {
+    const pend = M.comps.reduce((a, c) => a + c.pending, 0n);
+    html += `<div class="group"><span class="nm">杂交种和图腾</span><span class="dim">${M.comps.length} 个</span>
+      <button class="small" data-claimc ${pend ? "" : "disabled"}>领取 ${fauna(pend)} FAUNA</button></div><div class="nfts">${M.comps.map(c => {
+        const k = "c:" + c.id;
+        imgs.push({k, addr: A.composite, id: c.id});
+        const img = IMG[k] ? `<img src="${IMG[k]}" alt="" data-img="${k}">` : `<div class="ph" data-img="${k}"></div>`;
+        const names = c.parents.map(a => (Object.values(G.sp).find(x => x.addr.toLowerCase() === a) || {}).name || "?").join(" + ");
+        return `<div class="nft" style="cursor:default">${img}<div class="t"><span>${c.kind === 1 ? "杂交" : "图腾"} #${c.id}</span></div>
+          <div class="p">${esc(names)}<br>待领 ${fauna(c.pending)} · 约 ${num(compDaily(c), 1)}/天</div></div>`;
+      }).join("")}</div>`;
+  }
+  $("mineBody").innerHTML = html;
+  updateActions();
+  loadImages(imgs);
+}
+
+function selected() { return G.sel.map(k => G.mine.items.find(t => key(t) === k)).filter(Boolean); }
+function checkMerge(sel) {
+  if (sel.length !== 3) return "三合一要正好选 3 只";
+  const [a] = sel;
+  if (sel.some(t => t.sid !== a.sid)) return "三只要是同一个物种";
+  if (sel.some(t => t.star !== a.star || t.pred !== a.pred)) return "三只要同星级（掠食者只能和掠食者合）";
+  if (a.star >= 5) return "已经 5 星，不能再升";
+  return "";
+}
+function checkFeed(sel) {
+  if (sel.length !== 1) return "喂养一次选 1 只";
+  if (sel[0].level >= 10) return "已经 10 级满级";
+  return "";
+}
+function feedCost(t) { return (t.pred ? G.lab.predFeedBase : G.lab.feedBase) << BigInt(t.level); }
+function checkHybrid(sel) {
+  if (sel.length !== 2) return "杂交要选 2 只";
+  if (sel[0].sid === sel[1].sid) return "杂交要两个不同物种";
+  if (sel.some(t => t.pred)) return "掠食者不能杂交";
+  return "";
+}
+function totemOrder(sel) {
+  const L = G.lab;
+  if (!L.recipeOn) return [null, "本周还没有图腾配方"];
+  if (sel.length !== 4) return [null, "图腾要选 4 只：配方里每个物种各 1 只"];
+  if (sel.some(t => t.pred)) return [null, "掠食者不能做图腾"];
+  const ids = L.recipe.map(sid => { const t = sel.find(x => x.sid === sid); return t ? t.id : null; });
+  if (ids.includes(null)) return [null, "要配方里的 4 个物种各 1 只：" + L.recipe.map(s => G.sp[s] ? G.sp[s].name : s).join("、")];
+  return [ids, ""];
+}
+function updateActions() {
+  if (!G.mine) return;
+  const sel = selected(), L = G.lab, M = G.mine;
+  const m = checkMerge(sel), f = checkFeed(sel), h = checkHybrid(sel), [, tt] = totemOrder(sel);
+  $("aMerge").disabled = !!m; $("aFeed").disabled = !!f; $("aHybrid").disabled = !!h; $("aTotem").disabled = !!tt;
+  let info = sel.length ? `已选 ${sel.length} 只。` : "点卡片选中生物，再选下面的操作。";
+  if (sel.length === 3 && !m) info += ` 三合一：手续费 ${bnb(L.mergeFee)} BNB，得到 1 只 ${stars(sel[0].star + 1)}。`;
+  if (sel.length === 1 && !f) { const c = feedCost(sel[0]); info += ` 喂养到 Lv ${sel[0].level + 1}：烧 ${fauna(c)} FAUNA` + (M.fauna < c ? '<span class="red">（余额不够）</span>' : "") + "。"; }
+  if (sel.length === 2 && !h) info += ` 杂交：手续费 ${bnb(L.hybridFee)} BNB + 烧 ${fauna(L.hybridCost)} FAUNA` + (M.fauna < L.hybridCost ? '<span class="red">（余额不够）</span>' : "") + "。";
+  if (sel.length === 4 && !tt) info += ` 图腾：手续费 ${bnb(L.totemFee)} BNB。`;
+  if (sel.length && m && f && h && tt) info += ` <span class="dim">${sel.length === 3 ? m : sel.length === 2 ? h : sel.length === 4 ? tt : f}</span>`;
+  $("selInfo").innerHTML = info;
+}
+
+function renderPred() {
+  if (!G.live) { $("predBody").innerHTML = `<p class="dim">合约上线后显示。</p>`; return; }
+  const L = G.lab, M = G.mine, left10 = L.predCap - L.predSold;
+  const per = L.predTotalWeight > 0n ? grazerDailyTotal() * 0.15 * 10 / Number(L.predTotalWeight) : 0;
+  let html = `<div class="card" style="max-width:620px">
+    <div class="top"><span class="nm">1 星掠食者</span><span class="badge ${left10 ? "mint" : ""}">${left10 ? "还剩 " + left10 + " 只" : "已售罄"}</span></div>
+    <div class="kv"><span>价格</span><span><b class="gold">${fauna(L.predPrice)}</b> FAUNA（付的币全部销毁）</span>
+    <span>已卖</span><span>${L.predSold} / ${L.predCap}，每卖 1 只下一只涨 2%</span>
+    <span>收入来源</span><span>所有普通生物每次领取的 15%，按掠食者权重分</span>
+    <span>现在估算</span><span>1 星 0 级约 ${num(per, 0)} FAUNA/天（随普通物种产量和掠食者数量变化）</span></div>
+    <div class="row"><button class="main" id="btnBuyPred" ${!left10 || (M && M.fauna < L.predPrice) ? "disabled" : ""}>用 FAUNA 换 1 只</button>
+    ${M ? `<span class="dim" style="font-size:13px">你有 ${fauna(M.fauna)} FAUNA${M.fauna < L.predPrice ? '，<span class="red">不够</span>' : ""}</span>` : ""}</div>
+  </div>
+  <div class="note">掠食者能喂 FAUNA 升级（第 n 级 ${fauna(L.predFeedBase)}×2ⁿ 枚），3 只同星掠食者能合成高一星。掠食者不能杂交、不能做图腾。买到后在“我的”页操作。</div>
+  <h3>掠食者主人</h3><div id="predOwners" class="dim">读取中…</div>`;
+  $("predBody").innerHTML = html;
+  loadPredOwners();
+}
+async function loadPredOwners() {
+  const s = G.sp[G.lab.predSid];
+  if (!s) { $("predOwners").textContent = "掠食者还没开放"; return; }
+  const ids = []; for (let id = s.max + 1; id <= s.nextId; id++) ids.push(id);
+  const r = await multi(ids.flatMap(id => [[s.addr, cd("ownerOf(uint256)", id)], [A.world, cd("traitsOf(uint256,uint256)", s.sid, id)]]));
+  const rows = ids.map((id, i) => r[i * 2] ? {id, owner: AD(r[i * 2]).toLowerCase(), star: N(r[i * 2 + 1], 0), level: N(r[i * 2 + 1], 1)} : null).filter(Boolean);
+  const hs = await multi([...new Set(rows.map(x => x.owner))].map(o => [A.agent, cd("handleOf(address)", o)]));
+  const hmap = {}; [...new Set(rows.map(x => x.owner))].forEach((o, i) => hmap[o] = STR(hs[i]));
+  rows.sort((a, b) => weight(b.star, b.level) - weight(a.star, a.level));
+  $("predOwners").innerHTML = rows.length ? `<div class="tablewrap"><table><tr><th>编号</th><th>星级</th><th>等级</th><th>权重</th><th>主人</th></tr>${rows.map(x =>
+    `<tr><td>#${x.id}</td><td class="gold">${stars(x.star)}</td><td>${x.level}</td><td>${weight(x.star, x.level)}</td>
+     <td>${hmap[x.owner] ? esc(hmap[x.owner]) + ".ai " : ""}${scan(x.owner)}${x.owner === G.me ? ' <span class="ok">（你）</span>' : ""}</td></tr>`).join("")}</table></div>` : "还没有";
+}
+
+function renderBoard() {
+  if (!G.live) { $("boardBody").innerHTML = `<p class="dim">合约上线后显示。</p>`; return; }
+  const L = G.lab, M = G.mine, cur = L.weeks.at(-1);
+  let html = `<div class="cards"><div class="card"><div class="top"><span class="nm">第 ${L.week + 1} 周</span><span class="badge mint">进行中</span></div>
+    <div class="kv"><span>奖池</span><span><b class="gold">${bnb(cur.pool)}</b> BNB</span>
+    <span>领先</span><span>${cur.count ? scan(cur.top) + `（${cur.count} 次）` : "还没人合成"}</span>
+    ${M ? `<span>你</span><span>${M.crafted} 次</span>` : ""}</div>
+    <div class="dim" style="font-size:13px">升星、杂交、图腾每做 1 次算 1 次。周结束后第一名拿走奖池，没人合成就滚到下一周。</div></div>
+    <div class="card"><div class="top"><span class="nm">本周图腾配方</span></div>
+    ${L.recipeOn ? `<div style="margin:8px 0">${L.recipe.map(sid => `<span class="badge mine" style="margin:2px">${esc(G.sp[sid] ? G.sp[sid].name : "#" + sid)}</span>`).join(" ")}</div>
+      <div class="dim" style="font-size:13px">这 4 个物种各交 1 只，合成 1 个图腾：权重 ×2，同时挖 4 个物种。</div>`
+      : `<div class="dim" style="margin-top:8px">本周配方还没设（孵化满 4 个物种后每周会自动设）。</div>`}</div></div>
+    <h3>往期</h3><div class="tablewrap"><table><tr><th>周</th><th>奖池</th><th>第一名</th><th>状态</th></tr>`;
+  html += L.weeks.slice(0, -1).reverse().map(w => `<tr><td>第 ${w.w + 1} 周</td><td>${bnb(w.pool)} BNB</td>
+    <td>${w.count ? scan(w.top) + `（${w.count} 次）` : '<span class="dim">无人合成</span>'}</td>
+    <td>${w.paid ? '<span class="ok">已结算</span>' : w.pool > 0n ? `<button class="small" data-settle="${w.w}">${w.count ? "发奖" : "滚到本周"}</button>` : '<span class="dim">—</span>'}</td></tr>`).join("") || `<tr><td colspan="4" class="dim">还没有往期</td></tr>`;
+  html += `</table></div>`;
+  $("boardBody").innerHTML = html;
+}
+
+function renderAll() {
+  renderWho(); renderStats(); fillRules();
+  if (G.tab === "species") renderSpecies();
+  if (G.tab === "mine") renderMine();
+  if (G.tab === "pred") renderPred();
+  if (G.tab === "board") renderBoard();
+}
+async function refresh() {
+  if (G.loading) return;
+  G.loading = true;
+  try {
+    await loadWorld();
+    await loadMe();
+  } catch (e) {
+    toast("读取链上数据失败：" + esc(errText(e)), "err");
+  } finally { G.loading = false; }
+  renderAll();
+}
+
+// ---------------- 事件 ----------------
+function showTab(t) {
+  G.tab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === "t-" + t));
+  history.replaceState(null, "", "#" + t);
+  renderAll();
+  const top = $("tabs").getBoundingClientRect().top;
+  if (top < 58) window.scrollBy(0, top - 66);   // 在页面下面切页时回到页签处
+}
+$("tabs").onclick = e => { const t = e.target.dataset.t; if (t) showTab(t); };
+$("btnConnect").onclick = connect;
+document.body.addEventListener("click", async e => {
+  const el = e.target.closest("[data-mint],[data-close],[data-reveal],[data-claim],[data-claimc],[data-auto],[data-settle],[data-goto],[data-connect],.nft[data-k]");
+  if (!el) return;
+  const d = el.dataset;
+  if (d.goto) { e.preventDefault(); showTab(d.goto); return; }
+  if (d.connect !== undefined) { connect(); return; }
+  if (d.mint) {
+    if (!G.me) { await connect(); return; }   // 先连上钱包，按自己的免费名额重新算价
+    const s = G.sp[d.mint], q = Math.max(1, parseInt($("q" + d.mint).value) || 1);
+    const fl = G.mine ? G.mine.freeLeft[s.sid] : 0, cost = BigInt(q - Math.min(fl, q)) * s.price;
+    await send(s.addr, cd("mint(uint256)", q), cost, `领 ${q} 个 ${s.name} 蛋`);
+    return;
+  }
+  if (d.close) { const s = G.sp[d.close]; await send(s.addr, cd("closeMint()"), 0, `${s.name} 关门`); return; }
+  if (d.reveal) { const s = G.sp[d.reveal]; await send(A.world, cd("reveal(uint256)", s.sid), 0, `孵化 ${s.name}`); return; }
+  if (d.claim) {
+    const sid = +d.claim, ids = G.mine.items.filter(t => t.sid === sid && t.pending > 0n).map(t => t.id);
+    await send(A.world, cd("claim(uint256,uint256[])", sid, ids), 0, `领取 ${G.sp[sid].name} 的 FAUNA`);
+    return;
+  }
+  if (d.claimc !== undefined) {
+    const ids = G.mine.comps.filter(c => c.pending > 0n).map(c => c.id);
+    await send(A.world, cd("claimComposite(uint256[])", ids), 0, "领取杂交种和图腾的 FAUNA");
+    return;
+  }
+  if (d.auto) {
+    const [sid, k] = d.auto.split(":"), star = parseInt(k), pred = k.endsWith("p");
+    const c = G.mine.items.filter(t => t.sid === +sid && !t.egg && t.star === star && t.pred === pred).sort((a, b) => b.level - a.level);
+    // 合成后的等级取三只里最高的：留一只等级最高的，配两只等级最低的
+    const pick = [c[0], ...c.slice(1).sort((a, b) => a.level - b.level).slice(0, 2)];
+    G.sel = pick.map(key); renderMine();
+    return;
+  }
+  if (d.settle) { await send(A.lab, cd("settleWeek(uint256)", +d.settle), 0, `发第 ${+d.settle + 1} 周奖池`); return; }
+  if (d.k) {
+    const t = G.mine.items.find(x => key(x) === d.k);
+    if (!t || t.egg) return;
+    G.sel = G.sel.includes(d.k) ? G.sel.filter(x => x !== d.k) : [...G.sel, d.k];
+    el.classList.toggle("sel", G.sel.includes(d.k));
+    updateActions();
+  }
+});
+$("aClear").onclick = () => { G.sel = []; renderMine(); };
+$("aMerge").onclick = async () => {
+  const sel = selected(); if (checkMerge(sel)) return;
+  const s = G.sp[sel[0].sid];
+  if (await send(A.lab, cd("merge(uint256,uint256[3])", s.sid, sel.map(t => t.id)), G.lab.mergeFee, `三合一（${s.name} ${stars(sel[0].star)}）`)) G.sel = [];
+  renderMine();
+};
+$("aFeed").onclick = async () => {
+  const [t] = selected(); if (!t || checkFeed([t])) return;
+  const c = feedCost(t);
+  if (G.mine.fauna < c) { toast(`FAUNA 不够：喂到 Lv ${t.level + 1} 要 ${fauna(c)} 枚`, "err"); return; }
+  if (await send(A.lab, cd("feed(uint256,uint256)", t.sid, t.id), 0, `喂养 ${G.sp[t.sid].name} #${t.id}`)) G.sel = [];
+  renderMine();
+};
+$("aHybrid").onclick = async () => {
+  const sel = selected(); if (checkHybrid(sel)) return;
+  if (G.mine.fauna < G.lab.hybridCost) { toast(`FAUNA 不够：杂交要烧 ${fauna(G.lab.hybridCost)} 枚`, "err"); return; }
+  const [a, b] = sel;
+  if (await send(A.lab, cd("hybridize(uint256,uint256,uint256,uint256)", a.sid, a.id, b.sid, b.id), G.lab.hybridFee, `杂交 ${G.sp[a.sid].name} × ${G.sp[b.sid].name}`)) G.sel = [];
+  renderMine();
+};
+$("aTotem").onclick = async () => {
+  const [ids, err] = totemOrder(selected()); if (err) return;
+  if (await send(A.lab, cd("makeTotem(uint256[4])", ids), G.lab.totemFee, "做图腾")) G.sel = [];
+  renderMine();
+};
+document.body.addEventListener("click", async e => {
+  if (e.target.id !== "btnBuyPred") return;
+  const L = G.lab;
+  if (G.mine && G.mine.fauna < L.predPrice) { toast("FAUNA 不够", "err"); return; }
+  if (!confirm(`用 ${fauna(L.predPrice)} FAUNA 换 1 只掠食者？付的 FAUNA 会全部销毁，不能撤回。`)) return;
+  await send(A.lab, cd("buyPredator()"), 0, "换掠食者");
+});
+
+(async () => {
+  const t = location.hash.slice(1);
+  if (["rules", "species", "mine", "pred", "board"].includes(t)) showTab(t);
+  if (eth()) {
+    try {
+      const accs = await eth().request({method: "eth_accounts"});
+      if (accs && accs[0]) { G.me = accs[0].toLowerCase(); }
+    } catch (e) { /* 没授权过就等用户点连接 */ }
+    if (eth().on && !G.hooked) {
+      G.hooked = true;
+      eth().on("accountsChanged", a => { G.me = a[0] ? a[0].toLowerCase() : null; G.sel = []; refresh(); });
+      eth().on("chainChanged", () => refresh());
+    }
+  }
+  await refresh();
+  if (G.live && G.tab === "rules" && !t) showTab(Object.values(G.sp).some(s => s.state === 0 && !s.pred) ? "species" : "rules");
+  setInterval(() => { if (!sending && document.visibilityState === "visible") refresh(); }, 30000);
+})();
+</script>
+</body>
+</html>
