@@ -781,7 +781,7 @@ function renderPred() {
     ${M ? `<span class="dim" style="font-size:13px">你有 ${fauna(M.fauna)} FAUNA${M.fauna < L.predPrice ? '，<span class="red">不够</span>' : ""}</span>` : ""}</div>
   </div>
   <div class="note">掠食者能喂 FAUNA 升级（第 n 级 ${fauna(L.predFeedBase)}×2ⁿ 枚），3 只同星掠食者能合成高一星。掠食者不能杂交、不能做图腾。买到后在“我的”页操作。</div>
-  <h3>掠食者主人</h3><div id="predOwners" class="dim">读取中…</div>`;
+  <h3>已有的掠食者</h3><div id="predOwners" class="dim">读取中…</div>`;
   $("predBody").innerHTML = html;
   loadPredOwners();
 }
@@ -792,9 +792,9 @@ async function loadPredOwners() {
   const r = await multi(ids.flatMap(id => [[s.addr, cd("ownerOf(uint256)", id)], [A.world, cd("traitsOf(uint256,uint256)", s.sid, id)]]));
   const rows = ids.map((id, i) => r[i * 2] ? {id, owner: AD(r[i * 2]).toLowerCase(), star: N(r[i * 2 + 1], 0), level: N(r[i * 2 + 1], 1)} : null).filter(Boolean);
   rows.sort((a, b) => weight(b.star, b.level) - weight(a.star, a.level));
-  $("predOwners").innerHTML = rows.length ? `<div class="tablewrap"><table><tr><th>编号</th><th>星级</th><th>等级</th><th>权重</th><th>主人</th></tr>${rows.map(x =>
+  $("predOwners").innerHTML = rows.length ? `<div class="tablewrap"><table><tr><th>编号</th><th>星级</th><th>等级</th><th>权重</th><th></th></tr>${rows.map(x =>
     `<tr><td>#${x.id}</td><td class="gold">${stars(x.star)}</td><td>${x.level}</td><td>${weight(x.star, x.level)}</td>
-     <td>${scan(x.owner)}${x.owner === G.me ? ' <span class="ok">（你）</span>' : ""}</td></tr>`).join("")}</table></div>` : "还没有";
+     <td>${x.owner === G.me ? '<span class="ok">你的</span>' : ""}</td></tr>`).join("")}</table></div>` : "还没有";
 }
 
 function renderBoard() {
