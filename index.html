@@ -146,7 +146,7 @@ footer { color: var(--dim); font-size: 12px; text-align: center; padding: 0 0 40
     <div class="tablewrap"><table>
       <tr><th>付费领蛋的 BNB</th><th>去向</th></tr>
       <tr><td>50%</td><td>孵化时自动加进 FAUNA/BNB 池子，LP 打进黑洞地址，谁也取不出来</td></tr>
-      <tr><td>10%</td><td>“最后一击”奖：给领到这个物种最后一只的钱包</td></tr>
+      <tr><td>10%</td><td>“最后一击”奖：给领到这个物种最后一只的钱包（到期没领完就给最后一个领的人），奖池实时显示在“物种”页</td></tr>
       <tr><td>5%</td><td>本周周榜奖池</td></tr>
       <tr><td>35%</td><td>项目方</td></tr>
     </table></div>
@@ -619,7 +619,15 @@ function renderSpecies() {
       <div class="dim" style="font-size:13px">已领 ${s.totalMinted} / ${s.max}（免费还剩 ${freeAll}）</div>
       <div class="kv"><span>免费</span><span>前 ${s.free} 只，每个钱包 ${s.fpw} 只</span>
       <span>之后</span><span>${bnb(s.price)} BNB / 只，每个钱包最多 ${s.mpw} 只</span>`;
-    if (s.state === 0) body += `<span>截止</span><span>${left(s.deadline - now)}</span>`;
+    if (s.state === 0) {
+      const per = s.price / 10n, zero = /^0x0+$/.test(s.lastMinter);
+      body += `<span>截止</span><span>${left(s.deadline - now)}</span>
+        <span>最后一击奖</span><span><b class="gold">${bnb(s.lastBNB)} BNB</b>，领到最后一个的人拿走${s.lastBNB ? "" : "（免费领完后，每付费领 1 个奖池加 " + bnb(per) + " BNB）"}
+        ${zero ? "" : `<br><span class="dim">现在排最后的是 ${scan(s.lastMinter)}</span>`}</span>`;
+    } else if (s.minted && !/^0x0+$/.test(s.lastMinter)) {
+      const pot = BigInt(Math.max(0, s.totalMinted - s.freeClaimed)) * s.price / 10n;
+      body += `<span>最后一击</span><span>${scan(s.lastMinter)} ${pot ? "拿走 " + bnb(pot) + " BNB" : "（全是免费领的，没有奖金）"}</span>`;
+    }
     if (s.state === 2) body += `<span>今天产量</span><span>${num(toF(s.daily), 0)} FAUNA（第 ${s.wk + 1} 周${s.wk >= 40 ? "，已停产" : ""}）</span>
       <span>总权重</span><span>${s.totalWeight.toLocaleString()}</span>`;
     body += `<span>合约</span><span>${scan(s.addr)}</span></div>`;
