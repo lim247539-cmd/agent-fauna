@@ -125,7 +125,7 @@ footer { color: var(--dim); font-size: 12px; text-align: center; padding: 0 0 40
       <li><b>升级</b>：喂 FAUNA，每升一级权重 +10%，最高 10 级。普通生物第 n 级要 <span data-fill="feedBase">50</span>×2ⁿ 枚，掠食者第 n 级要 <span data-fill="predFeedBase">50,000</span>×2ⁿ 枚。喂的币全部销毁。</li>
       <li><b>杂交</b>：两个不同物种各 1 只 → 1 只杂交种，权重是两只之和 ×1.25，同时挖两个物种的产量。手续费 <span data-fill="hybridFee">0.0002</span> BNB，另外销毁 <span data-fill="hybridCost">1,000</span> FAUNA。</li>
       <li><b>图腾</b>：每周指定 4 个物种，各交 1 只 → 1 个图腾，权重是四只之和 ×2，同时挖 4 个物种。手续费 <span data-fill="totemFee">0.0005</span> BNB。本周配方看“周榜”页。</li>
-      <li><b>掠食者</b>：蛋里开不出来，只能用 FAUNA 换：第 1 只 <span data-fill="predPrice0">500,000</span> 枚，每卖出 1 只涨 2%，<b>一共只卖 10 只</b>（另有 1 只创世掠食者）。换掠食者付的 FAUNA 全部销毁。所有普通生物每次领取都要被抽 15% 给掠食者，按掠食者的权重分。掠食者也能喂养升级、三只合一升星。</li>
+      <li><b>掠食者</b>：蛋里开不出来，只能用 FAUNA 换：第 1 只 <span data-fill="predPrice0">500,000</span> 枚，每卖出 1 只涨 2%，<b>一共只卖 10 只</b>（另有 1 只创世掠食者归项目方，用途见下面“钱去哪里”）。换掠食者付的 FAUNA 全部销毁。所有普通生物每次领取都要被抽 15% 给掠食者，按掠食者的权重分。掠食者也能喂养升级、三只合一升星。</li>
       <li><b>周榜</b>：每周合成（升星、杂交、图腾）次数最多的钱包，拿走本周奖池里的 BNB。</li>
       <li><b>Agent ID 加成</b>：领取 FAUNA 时，钱包里有 Agent ID 的多拿 20%。</li>
     </ol>
@@ -151,12 +151,17 @@ footer { color: var(--dim); font-size: 12px; text-align: center; padding: 0 0 40
       <tr><td>35%</td><td>项目方</td></tr>
     </table></div>
     <p class="dim">合成、杂交、图腾的手续费归项目方。杂交、喂养、换掠食者花的 FAUNA 全部销毁。</p>
+    <div class="note"><b>项目方的创世掠食者和加池计划</b><br>
+      项目方持有 1 只创世掠食者（不占 10 只的名额），和其它掠食者一样分普通生物领取时的 15% 抽成。
+      项目方打算把收到的合成手续费和这只掠食者挖到的 FAUNA，按后期情况拿出来加进 FAUNA/BNB 池子，预计大部分会用来加池，让游戏能长期玩下去。
+      加多少、什么时候加现在不做承诺。每次加池都在链上公开，可以自己查：<span id="lpLinks">合约上线后显示池子和项目方钱包链接</span>。</div>
 
     <h3>安全说明</h3>
     <ul>
       <li>合约里没有任何能提走玩家 NFT、FAUNA 或池子的函数。</li>
       <li>FAUNA 总量上限 20 亿枚，只有挖矿奖励和自动加池能增发，没有交易税。</li>
       <li>项目方能做的只有：发新物种、每周设图腾配方、在写死的上限内调手续费和喂养价格、换图片合约（只影响画风）。</li>
+      <li>项目方持有 1 只创世掠食者，部署时就有，收益用途见上面的加池计划。</li>
       <li>NFT 转手版税 5%（交易市场支持时）。</li>
     </ul>
     <div id="contracts" class="dim" style="font-size:13px"></div>
@@ -365,13 +370,14 @@ async function loadWorld() {
     [L, cd("predFeedBase()")], [L, cd("recipeWeek()")], [A.token, cd("totalSupply()")],
     [A.factory, cd("getPair(address,address)", A.token, A.wbnb)], [A.factory, cd("getPair(address,address)", A.wbnb, A.usdt)],
     [L, cd("recipe(uint256)", 0)], [L, cd("recipe(uint256)", 1)], [L, cd("recipe(uint256)", 2)], [L, cd("recipe(uint256)", 3)],
+    [A.world, cd("treasury()")],
   ];
   const r = await multi(base);
   const lab = {
     week: N(r[2]), predSid: N(r[3]), predSold: N(r[4]), predPrice: U(r[5]), predCap: N(r[6]), mergeFee: U(r[7]),
     hybridFee: U(r[8]), totemFee: U(r[9]), hybridCost: U(r[10]), feedBase: U(r[11]), predFeedBase: U(r[12]),
     recipeWeek: U(r[13]), supply: U(r[14]), pair: AD(r[15]), usdPair: AD(r[16]), predTotalWeight: U(r[1]),
-    recipe: [N(r[17]), N(r[18]), N(r[19]), N(r[20])],
+    recipe: [N(r[17]), N(r[18]), N(r[19]), N(r[20])], treasury: AD(r[21]).toLowerCase(),
   };
   lab.recipeOn = lab.recipeWeek === BigInt(lab.week);
   G.n = N(r[0]);
@@ -586,6 +592,8 @@ function renderStats() {
     box("掠食者", `${L.predSold}/${L.predCap}`, L.predSold < L.predCap ? "下一只 " + fauna(L.predPrice) + " FAUNA" : "已售罄") +
     box(`第 ${L.week + 1} 周奖池`, bnb(L.weeks.at(-1).pool) + " BNB", L.weeks.at(-1).count ? "领先：" + short(L.weeks.at(-1).top) + "（" + L.weeks.at(-1).count + " 次）" : "还没人合成") +
     (M ? box("我的 FAUNA", fauna(M.fauna), bnb(M.bnb) + " BNB") : "");
+  $("lpLinks").innerHTML = (L.pair && !/^0x0+$/.test(L.pair) ? `FAUNA/BNB 池子 ${scan(L.pair)}` : "池子在第一个物种孵化时自动建") +
+    ` · 项目方钱包 ${scan(L.treasury)}`;
   $("contracts").innerHTML = "合约：" + [["FAUNA 代币", A.token], ["世界", A.world], ["工坊", A.lab], ["杂交种/图腾", A.composite]]
     .map(([n, a]) => `${n} ${scan(a, "address")}`).join(" · ");
 }
@@ -770,6 +778,7 @@ function renderPred() {
     ${M ? `<span class="dim" style="font-size:13px">你有 ${fauna(M.fauna)} FAUNA${M.fauna < L.predPrice ? '，<span class="red">不够</span>' : ""}</span>` : ""}</div>
   </div>
   <div class="note">掠食者能喂 FAUNA 升级（第 n 级 ${fauna(L.predFeedBase)}×2ⁿ 枚），3 只同星掠食者能合成高一星。掠食者不能杂交、不能做图腾。买到后在“我的”页操作。</div>
+  <div class="note">创世掠食者 #1 归项目方。它挖到的 FAUNA 和项目方收到的手续费，打算按后期情况拿来加 FAUNA/BNB 池子（预计大部分），具体数量不做承诺，加池记录都能在链上查到。</div>
   <h3>掠食者主人</h3><div id="predOwners" class="dim">读取中…</div>`;
   $("predBody").innerHTML = html;
   loadPredOwners();
@@ -785,7 +794,7 @@ async function loadPredOwners() {
   rows.sort((a, b) => weight(b.star, b.level) - weight(a.star, a.level));
   $("predOwners").innerHTML = rows.length ? `<div class="tablewrap"><table><tr><th>编号</th><th>星级</th><th>等级</th><th>权重</th><th>主人</th></tr>${rows.map(x =>
     `<tr><td>#${x.id}</td><td class="gold">${stars(x.star)}</td><td>${x.level}</td><td>${weight(x.star, x.level)}</td>
-     <td>${hmap[x.owner] ? esc(hmap[x.owner]) + ".ai " : ""}${scan(x.owner)}${x.owner === G.me ? ' <span class="ok">（你）</span>' : ""}</td></tr>`).join("")}</table></div>` : "还没有";
+     <td>${hmap[x.owner] ? esc(hmap[x.owner]) + ".ai " : ""}${scan(x.owner)}${x.owner === G.lab.treasury ? ' <span class="gold">（项目方）</span>' : ""}${x.owner === G.me ? ' <span class="ok">（你）</span>' : ""}</td></tr>`).join("")}</table></div>` : "还没有";
 }
 
 function renderBoard() {
